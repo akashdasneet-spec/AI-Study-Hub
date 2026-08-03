@@ -1,0 +1,55 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "AI-Powered Group Study Hub API",
+    "version": "1.0.0",
+    "description": "Enterprise REST API Specification for Authentication, Collaborative Study Rooms, and Dual-Model AI Services."
+  },
+  "paths": {
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Authenticate user & issue JWT tokens",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "example": "student@studyhub.com" },
+                  "password": { "type": "string", "example": "password123" }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Authentication successful" }
+        }
+      }
+    },
+    "/api/v1/rooms": {
+      "get": {
+        "summary": "List active public study rooms",
+        "responses": {
+          "200": { "description": "List of active public rooms" }
+        }
+      },
+      "post": {
+        "summary": "Create a new study room",
+        "responses": {
+          "201": { "description": "Room created successfully" }
+        }
+      }
+    },
+    "/api/v1/ai/summarize": {
+      "post": {
+        "summary": "Generate AI note summary",
+        "responses": {
+          "200": { "description": "Summary generated successfully" }
+        }
+      }
+    }
+  }
+}

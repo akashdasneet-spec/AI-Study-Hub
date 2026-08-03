@@ -1,0 +1,164 @@
+// Prisma Database Schema for AI-Powered Group Study Hub
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  TUTOR
+  ADMIN
+}
+
+enum RoomRole {
+  OWNER
+  MODERATOR
+  MEMBER
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String?
+  name          String
+  avatarUrl     String?
+  role          Role           @default(STUDENT)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  refreshTokens RefreshToken[]
+  ownedRooms    StudyRoom[]    @relation("OwnedRooms")
+  participants  RoomParticipant[]
+  noteSummaries NoteSummary[]
+  quizAttempts  QuizAttempt[]
+  createdQuizzes Quiz[]        @relation("CreatedQuizzes")
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model StudyRoom {
+  id              String            @id @default(uuid())
+  title           String
+  description     String?
+  ownerId         String
+  owner           User              @relation("OwnedRooms", fields: [ownerId], references: [id], onDelete: Cascade)
+  isPrivate       Boolean           @default(false)
+  passcode        String?
+  maxParticipants Int               @default(10)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  participants    RoomParticipant[]
+  noteSummaries   NoteSummary[]
+
+  @@map("study_rooms")
+}
+
+model RoomParticipant {
+  id        String   @id @default(uuid())
+  roomId    String
+  userId    String
+  role      RoomRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+
+  room      StudyRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@map("room_participants")
+}
+
+model NoteSummary {
+  id          String     @id @default(uuid())
+  title       String
+  originalText String    @db.Text
+  summaryText String     @db.Text
+  keyPoints   String[]
+  modelUsed   String
+  userId      String
+  roomId      String?
+  createdAt   DateTime   @default(now())
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room        StudyRoom? @relation(fields: [roomId], references: [id], onDelete: SetNull)
+
+  @@map("note_summaries")
+}
+
+model Quiz {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  difficulty  Difficulty   @default(MEDIUM)
+  creatorId   String
+  createdAt   DateTime     @default(now())
+
+  creator     User         @relation("CreatedQuizzes", fields: [creatorId], references: [id], onDelete: Cascade)
+  questions   Question[]
+  attempts    QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+model Question {
+  id            String   @id @default(uuid())
+  quizId        String
+  questionText  String
+  options       String[]
+  correctIndex  Int
+  explanation   String?
+
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@map("questions")
+}
+
+model QuizAttempt {
+  id          String   @id @default(uuid())
+  quizId      String
+  userId      String
+  score       Int
+  totalCount  Int
+  completedAt DateTime @default(now())
+
+  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_attempts")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  details   String?  @db.Text
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
