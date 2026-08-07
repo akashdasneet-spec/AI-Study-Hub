@@ -9,9 +9,14 @@ export class AuthController {
   @Post('register')
   async register(@Body() body: any) {
     const validated = registerSchema.parse(body);
-    const data = await this.authService.register(validated);
+    const data = await this.authService.register({
+      email: validated.email,
+      password: validated.password,
+      name: validated.name || body.name || 'Student',
+    });
     return { success: true, data };
   }
+
 
   @Post('login')
   @HttpCode(HttpStatus.OK)

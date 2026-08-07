@@ -10,10 +10,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hub/types": "workspace:*",
+    "@hub/utils": "workspace:*",
     "@nestjs/common": "^10.3.0",
     "@nestjs/core": "^10.3.0",
     "@nestjs/platform-express": "^10.3.0",
+    "@nestjs/platform-socket.io": "^10.3.0",
     "@nestjs/swagger": "^7.3.0",
+    "@nestjs/websockets": "^10.3.0",
     "@prisma/client": "^5.10.0",
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
@@ -23,8 +27,7 @@
     "jsonwebtoken": "^9.0.2",
     "reflect-metadata": "^0.2.1",
     "rxjs": "^7.8.1",
-    "@hub/types": "workspace:*",
-    "@hub/utils": "workspace:*"
+    "socket.io": "^4.7.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

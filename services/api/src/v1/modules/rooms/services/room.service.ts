@@ -8,9 +8,10 @@ export class RoomService {
   private readonly roomRepo = new RoomRepository();
 
   async createRoom(ownerId: string, dto: CreateRoomDto) {
-    const raw = await this.roomRepo.createRoom(ownerId, dto);
+    const raw = await this.roomRepo.createRoom({ ...dto, ownerId });
     return new RoomEntity(raw);
   }
+
 
   async listRooms() {
     const rooms = await this.roomRepo.listPublicRooms();

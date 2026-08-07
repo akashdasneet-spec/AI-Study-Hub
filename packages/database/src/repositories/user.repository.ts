@@ -4,7 +4,7 @@ export class UserRepository {
   private users = new Map<string, any>();
   private refreshTokens = new Map<string, any>();
 
-  async createUser(data: { email: string; password?: string; passwordHash?: string; name: string }) {
+  async createUser(data: { email: string; password?: string; passwordHash?: string; name?: string }) {
     const normalizedEmail = data.email.toLowerCase().trim();
 
     // Check duplicate email
@@ -23,7 +23,8 @@ export class UserRepository {
       id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       email: normalizedEmail,
       passwordHash,
-      name: data.name.trim(),
+      name: (data.name || 'Student').trim(),
+
       avatarUrl: '',
       bio: 'Enthusiastic learner & study room participant.',
       timezone: 'UTC',

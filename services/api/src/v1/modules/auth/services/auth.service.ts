@@ -7,7 +7,7 @@ import { registerContract, loginContract, updateProfileContract } from '@hub/con
 export class AuthService {
   private userRepo = new UserRepository();
 
-  async register(body: any) {
+  async register(body: { email: string; password: string; name?: string }) {
     const parsed = registerContract.parse(body);
 
     const existing = await this.userRepo.findByEmail(parsed.email);
@@ -20,6 +20,7 @@ export class AuthService {
       password: parsed.password,
       name: parsed.name,
     });
+
 
     const accessToken = signAccessToken({ sub: user.id, email: user.email, role: user.role });
     const refreshToken = signRefreshToken({ sub: user.id, email: user.email, role: user.role });

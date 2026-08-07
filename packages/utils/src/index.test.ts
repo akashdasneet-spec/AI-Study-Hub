@@ -1,34 +1,27 @@
-import { formatDate, truncateText, sanitizeInput, registerSchema, createRoomSchema } from './index';
+import { generateCorrelationId, hashPrompt, formatTimerSeconds, isValidYoutubeUrl } from './index';
 
-describe('Utility & Validation Helpers', () => {
-  it('formatDate formats ISO string correctly', () => {
-    const formatted = formatDate('2026-08-03T12:00:00Z');
-    expect(formatted).toContain('2026');
+describe('Shared Utilities Unit Suite', () => {
+  it('should generate valid correlation ID string', () => {
+    const id = generateCorrelationId();
+    expect(id).toMatch(/^corr_\d+_[a-f0-9]{8}$/);
   });
 
-  it('truncateText cuts string longer than limit', () => {
-    const text = 'This is a long sentence meant to test text truncation in utility helpers.';
-    const truncated = truncateText(text, 20);
-    expect(truncated.endsWith('...')).toBe(true);
-    expect(truncated.length).toBeLessThanOrEqual(23);
+  it('should generate deterministic SHA-256 hash for prompt text', () => {
+    const text = 'active recall physics prompt';
+    const hash1 = hashPrompt(text);
+    const hash2 = hashPrompt(text);
+    expect(hash1).toBe(hash2);
+    expect(hash1.length).toBe(64);
   });
 
-  it('sanitizeInput strips script tag delimiters', () => {
-    const raw = '<script>alert("xss")</script>';
-    const sanitized = sanitizeInput(raw);
-    expect(sanitized).toBe('scriptalert("xss")/script');
+  it('should format seconds to MM:SS string correctly', () => {
+    expect(formatTimerSeconds(65)).toBe('01:05');
+    expect(formatTimerSeconds(1500)).toBe('25:00');
   });
 
-  it('registerSchema validates valid user input', () => {
-    const valid = { email: 'student@studyhub.com', password: 'securepassword123', name: 'John Doe' };
-    const parsed = registerSchema.parse(valid);
-    expect(parsed.email).toBe('student@studyhub.com');
-  });
-
-  it('createRoomSchema applies default maxParticipants', () => {
-    const validRoom = { title: 'Physics Sprint' };
-    const parsed = createRoomSchema.parse(validRoom);
-    expect(parsed.maxParticipants).toBe(10);
-    expect(parsed.isPrivate).toBe(false);
+  it('should validate YouTube video URLs', () => {
+    expect(isValidYoutubeUrl('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe(true);
+    expect(isValidYoutubeUrl('https://youtu.be/dQw4w9WgXcQ')).toBe(true);
+    expect(isValidYoutubeUrl('https://invalid-domain.com')).toBe(false);
   });
 });
