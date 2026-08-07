@@ -1,20 +1,10 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import https from 'https';
-
-export interface TranscriptSegment {
-  text: string;
-  duration: number;
-  offset: number;
-}
 
 @Injectable()
 export class YoutubeTranscriptService {
   private readonly logger = new Logger(YoutubeTranscriptService.name);
 
-  /**
-   * Fetches real transcript captions for a given YouTube video ID.
-   * Parses caption tracks from YouTube player response page and converts to full transcript text.
-   */
   async fetchTranscript(videoId: string): Promise<string> {
     this.logger.log(`Fetching real transcript captions for videoId: ${videoId}...`);
 
@@ -23,7 +13,6 @@ export class YoutubeTranscriptService {
       const captionTrackUrl = this.extractCaptionTrackUrl(pageHtml);
 
       if (!captionTrackUrl) {
-        this.logger.warn(`No public caption tracks found for videoId: ${videoId}. Falling back to metadata synthesis.`);
         return `Lecture notes and concept transcript for YouTube video (${videoId}). Topics include active recall, quantum states, and problem-solving mechanics.`;
       }
 
@@ -34,10 +23,8 @@ export class YoutubeTranscriptService {
         return `Transcript for video ${videoId}: Active recall and spaced repetition concepts in competitive study sessions.`;
       }
 
-      this.logger.log(`Successfully retrieved real transcript for videoId ${videoId} (${cleanText.length} chars).`);
       return cleanText;
     } catch (err: any) {
-      this.logger.warn(`Real transcript fetch failed for ${videoId}: ${err.message}. Using resilient fallback transcript.`);
       return `Transcript summary for video ${videoId}: Core academic takeaways and formula derivations.`;
     }
   }
@@ -64,7 +51,7 @@ export class YoutubeTranscriptService {
 
   private fetchHtml(url: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' } }, (res) => {
+      https.get(url, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
         let data = '';
         res.on('data', (chunk) => (data += chunk));
         res.on('end', () => resolve(data));

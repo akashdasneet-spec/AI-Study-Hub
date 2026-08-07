@@ -8,19 +8,13 @@ export class NotesService {
 
   constructor(private readonly transcriptService: YoutubeTranscriptService) {}
 
-  /**
-   * Processes a YouTube URL, retrieves real video caption transcripts via YoutubeTranscriptService,
-   * and synthesizes structured AI study notes.
-   */
   async importYoutubeLecture(userId: string, dto: ImportYoutubeDto) {
-    const videoId = this.extractYoutubeId(dto.youtubeUrl);
+    const videoId = this.extractYoutubeId(dto.youtubeUrl || '');
     if (!videoId) {
       throw new BadRequestException('Invalid YouTube URL provided');
     }
 
-    // Retrieve real caption transcript
     const realTranscript = await this.transcriptService.fetchTranscript(videoId);
-
     const summaryTitle = dto.title || `YouTube Lecture Notes (${videoId})`;
 
     return {

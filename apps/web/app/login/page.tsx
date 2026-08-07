@@ -1,11 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { GlassCard, GradientButton } from '@hub/ui';
 import { loginContract } from '@hub/contracts';
 import { Sparkles, Mail, Lock, LogIn } from 'lucide-react';
+import { apiClient } from '../../lib/api-client';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -17,26 +21,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Validate input against Zod contract
       loginContract.parse({ email, password });
 
-      // Call API or simulate authentication response
-      const res = await fetch('http://localhost:4000/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const json = await res.json();
-      if (!json.success) {
-        throw new Error(json.error?.message || 'Invalid credentials');
+      const res = await apiClient.post('/auth/login', { email, password });
+      if (!res.success || !res.data) {
+        throw new Error(typeof res.error === 'string' ? res.error : res.error?.message || 'Invalid credentials');
       }
 
-      // Persist access token in localStorage
-      localStorage.setItem('accessToken', json.data.tokens.accessToken);
-      localStorage.setItem('user', JSON.stringify(json.data.user));
+      localStorage.setItem('accessToken', res.data.tokens.accessToken);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Authentication failed. Please check your credentials.');
     } finally {
@@ -103,9 +98,9 @@ export default function LoginPage() {
 
         <div className="text-center text-xs text-slate-400 pt-2 border-t border-slate-800">
           Don't have an account?{' '}
-          <a href="/register" className="text-indigo-400 font-semibold hover:underline">
+          <Link href="/register" className="text-indigo-400 font-semibold hover:underline">
             Register here
-          </a>
+          </Link>
         </div>
       </GlassCard>
     </div>

@@ -1,5 +1,12 @@
-export interface ImportYoutubeDto {
-  youtubeUrl: string;
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+
+export class ImportYoutubeDto {
+  @IsString()
+  @IsNotEmpty()
+  youtubeUrl!: string;
+
+  @IsString()
+  @IsOptional()
   title?: string;
-  roomId?: string;
 }
+

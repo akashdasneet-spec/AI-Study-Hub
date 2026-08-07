@@ -1,39 +1,32 @@
-import { NestFactory } from '@nestjs/core';
-import { Module } from '@nestjs/common';
-import {
-  WebSocketGateway,
-  WebSocketServer,
-  SubscribeMessage,
-  MessageBody,
-  ConnectedSocket,
-} from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
+import http from 'http';
 
-@WebSocketGateway({ cors: { origin: '*' }, namespace: '/realtime/rooms' })
-class RoomsGateway {
-  @WebSocketServer() server!: Server;
+const server = http.createServer();
+const io = new Server(server, {
+  cors: { origin: '*' },
+});
 
-  @SubscribeMessage('room:join')
-  handleJoin(@ConnectedSocket() client: Socket, @MessageBody() payload: any) {
-    client.join(payload.roomId);
-    client.to(payload.roomId).emit('room:user-joined', payload);
-  }
+const roomNamespace = io.of('/realtime/rooms');
 
-  @SubscribeMessage('whiteboard:draw')
-  handleDraw(@ConnectedSocket() client: Socket, @MessageBody() payload: any) {
-    client.to(payload.roomId).emit('whiteboard:update', payload.strokeData);
-  }
-}
+roomNamespace.on('connection', (socket) => {
+  console.log(`⚡ Client connected to room socket: ${socket.id}`);
 
-@Module({
-  providers: [RoomsGateway],
-})
-class WsModule {}
+  socket.on('room:join', ({ roomId, userName }) => {
+    socket.join(roomId);
+    socket.to(roomId).emit('room:user-joined', { userId: socket.id, userName });
+  });
 
-async function bootstrap() {
-  const app = await NestFactory.create(WsModule);
-  await app.listen(4001);
-  console.log(`🔌 WebSockets Microservice running on ws://localhost:4001/realtime/rooms`);
-}
+  socket.on('chat:message', ({ roomId, userName, text }) => {
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    roomNamespace.to(roomId).emit('chat:broadcast', { id: Date.now().toString(), userName, text, time });
+  });
 
-bootstrap();
+  socket.on('timer:toggle', ({ roomId, isRunning }) => {
+    roomNamespace.to(roomId).emit('timer:state', { isRunning });
+  });
+});
+
+const port = process.env.PORT || 4001;
+server.listen(port, () => {
+  console.log(`🚀 WebSockets Realtime Service running on port ${port}`);
+});

@@ -6,8 +6,8 @@ export class QuizController {
   constructor(private readonly quizService: QuizService) {}
 
   @Post('generate')
-  async generateQuiz(@Body() body: any) {
-    const data = await this.quizService.generateQuiz(body);
+  async generate(@Body() body: any) {
+    const data = await this.quizService.generateQuiz(body.title || 'General Knowledge', body.questionCount || 5);
     return { success: true, data };
   }
 }

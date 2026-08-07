@@ -1,110 +1,94 @@
-export type UserRole = 'STUDENT' | 'TUTOR' | 'ADMIN';
-export type RoomRole = 'OWNER' | 'MODERATOR' | 'MEMBER';
-export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
-
-export interface User {
+export interface UserProfile {
   id: string;
   email: string;
   name: string;
-  role: UserRole;
   avatarUrl?: string;
+  role: 'STUDENT' | 'HOST' | 'ADMIN';
+  xp: number;
+  studyStreakDays: number;
+  bio?: string;
+  timezone?: string;
+  studyGoals?: string;
+  themePreference?: 'dark' | 'light' | 'system';
   createdAt: string;
-  updatedAt: string;
-}
-
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-}
-
-export interface AuthResponse {
-  user: User;
-  tokens: AuthTokens;
 }
 
 export interface StudyRoom {
   id: string;
   title: string;
   description?: string;
-  ownerId: string;
   isPrivate: boolean;
   maxParticipants: number;
+  participantsCount: number;
+  ownerId: string;
+  ownerName: string;
   createdAt: string;
-  updatedAt: string;
 }
 
-export interface RoomParticipant {
+export interface ChatMessage {
   id: string;
   roomId: string;
   userId: string;
-  role: RoomRole;
-  joinedAt: string;
-  user?: User;
+  userName: string;
+  text: string;
+  time: string;
 }
 
 export interface NoteSummary {
   id: string;
   title: string;
-  originalText: string;
   summaryText: string;
   keyPoints: string[];
+  definitions?: Record<string, string>;
+  examples?: string[];
+  importantTerms?: string[];
+  reviewQuestions?: string[];
   modelUsed: string;
-  userId: string;
-  roomId?: string;
   createdAt: string;
 }
 
-export interface Question {
+export interface Flashcard {
+  id: string;
+  front: string;
+  back: string;
+  hint?: string;
+}
+
+export interface FlashcardDeck {
+  deckTitle: string;
+  cards: Flashcard[];
+}
+
+export interface QuizQuestion {
   id: string;
   questionText: string;
   options: string[];
   correctIndex: number;
-  explanation?: string;
+  explanation: string;
 }
 
-export interface Quiz {
+export interface QuizData {
+  quizTitle: string;
+  difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
+  questions: QuizQuestion[];
+}
+
+export interface AchievementBadge {
   id: string;
   title: string;
-  description?: string;
-  difficulty: Difficulty;
-  creatorId: string;
-  questions: Question[];
-  createdAt: string;
+  description: string;
+  icon: string;
+  unlockedAt?: string;
+  category: 'STREAK' | 'XP' | 'QUIZ' | 'ROOMS';
 }
 
-export interface QuizAttempt {
+export interface LeaderboardRow {
+  rank: number;
   id: string;
-  quizId: string;
-  userId: string;
-  score: number;
-  totalCount: number;
-  completedAt: string;
+  name: string;
+  avatarUrl?: string;
+  xp: number;
+  studyStreakDays: number;
+  role: string;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: unknown;
-  };
-  meta?: {
-    page?: number;
-    limit?: number;
-    total?: number;
-  };
-}
-
-export interface AISummarizePayload {
-  title: string;
-  text: string;
-  roomId?: string;
-}
-
-export interface AIQuizGenPayload {
-  title: string;
-  text: string;
-  difficulty?: Difficulty;
-  questionCount?: number;
-}

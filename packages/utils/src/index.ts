@@ -1,28 +1,20 @@
-/**
- * Formats a date string into a standard readable locale format.
- */
-export function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(date);
+import crypto from 'crypto';
+
+export function generateCorrelationId(): string {
+  return `corr_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
 }
 
-/**
- * Truncates text to a specified maximum length with ellipsis.
- */
-export function truncateText(text: string, maxLength: number = 100): string {
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength).trimEnd() + '...';
+export function hashPrompt(promptText: string): string {
+  return crypto.createHash('sha256').update(promptText).digest('hex');
 }
 
-/**
- * Sanitizes user input string for basic security.
- */
-export function sanitizeInput(input: string): string {
-  return input.replace(/[<>]/g, '');
+export function formatTimerSeconds(secs: number): string {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
 
-export * from './validation';
+export function isValidYoutubeUrl(url: string): boolean {
+  const pattern = /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/;
+  return pattern.test(url);
+}

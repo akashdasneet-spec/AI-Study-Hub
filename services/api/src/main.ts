@@ -1,31 +1,30 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as dotenv from 'dotenv';
 
-dotenv.config();
+import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api/v1');
+  app.use(cookieParser());
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: false }));
 
-  const prefix = process.env.API_PREFIX || '/api/v1';
-  app.setGlobalPrefix(prefix);
 
-  app.enableCors({ origin: true, credentials: true });
+  const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
+    ? process.env.CORS_ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000', 'http://localhost:3001'];
 
-  const config = new DocumentBuilder()
-    .setTitle('AI-Powered Group Study Hub REST API Service')
-    .setDescription('Domain-Driven REST API Gateway Services')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  app.enableCors({
+    origin: allowedOrigins,
+    credentials: true,
+  });
 
   const port = process.env.PORT || 4000;
   await app.listen(port);
-  console.log(`🚀 REST API Service running on http://localhost:${port}${prefix}`);
+  console.log(`🚀 REST API Gateway running on http://localhost:${port}/api/v1`);
 }
-
 bootstrap();
+

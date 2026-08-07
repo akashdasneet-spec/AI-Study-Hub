@@ -6,8 +6,8 @@ export class FlashcardsController {
   constructor(private readonly flashcardsService: FlashcardsService) {}
 
   @Post('generate')
-  async generateFlashcards(@Body() body: any) {
-    const data = await this.flashcardsService.generateFlashcardDeck(body);
+  async generate(@Body() body: any) {
+    const data = await this.flashcardsService.generateDeck(body.title || 'Study Subject', body.cardCount || 5);
     return { success: true, data };
   }
 }

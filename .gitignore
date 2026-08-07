@@ -26,9 +26,6 @@ build
 !.vscode/settings.json
 .idea
 *.suo
-*.ntvs*
-*.njsproj
-*.sln
 *.sw?
 
 # OS Files
@@ -38,12 +35,3 @@ Thumbs.db
 # Logs
 logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Database & Cache
-*.sqlite
-*.db
-redis-data

@@ -1,78 +1,107 @@
 # AI-Powered Group Study Hub
 
-> The world's best AI-powered collaborative study platform for students.
+> Enterprise SaaS Monorepo Platform for Collaborative Group Study, AI Note Summaries, Practice Quizzes, and Real-time Whiteboards.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Phase%201%3A%20Workspace%20Bootstrap-green.svg)](#)
-
----
-
-## 🚀 Overview
-
-The **AI-Powered Group Study Hub** is an enterprise-grade SaaS web application built with Next.js, NestJS, Socket.IO, PostgreSQL, Redis, and a multi-provider AI Gateway (OpenAI & Google Gemini).
-
-For the full project specifications, quality gates, security policies, and architectural standards, please consult the [PROJECT_CHARTER.md](./PROJECT_CHARTER.md).
+[![Status](https://img.shields.io/badge/Status-Modular%20Monolith%20v1.0.0--beta.1-green.svg)](#)
 
 ---
 
 ## 🏗️ Monorepo Architecture
 
-This repository uses **Turborepo** + **pnpm Workspaces**:
+This monorepo uses **Turborepo** + **pnpm Workspaces**:
 
 ```
-/
+AI-Study-Hub/
 ├── apps/
-│   ├── web/           # Student-facing Next.js App
-│   ├── admin/         # Admin Dashboard Next.js App
-│   └── api/           # NestJS Backend API Service
+│   ├── web/                    # Student Portal Next.js 14 App Router
+│   └── admin/                  # Admin Dashboard Next.js 14 App Router
+├── services/
+│   ├── api/                    # REST API Module Gateway (/api/v1/modules/*)
+│   ├── websocket/              # Realtime WebSockets Microservice (Rooms, Chat, Whiteboard)
+│   ├── ai/                     # AI Gateway Service (Summarization, Quiz, Providers)
+│   └── events/                 # Asynchronous Infrastructure Event Bus (@hub/events)
 ├── packages/
-│   ├── ui/            # Shared React UI Component Library
-│   ├── config/        # Shared ESLint, Prettier, TypeScript & Tailwind Configs
-│   ├── types/         # Shared TypeScript DTOs, interfaces & domain types
-│   └── utils/         # Shared helper functions & input validators
-├── turbo.json         # Turborepo task pipeline configuration
-├── pnpm-workspace.yaml# pnpm workspace definition
-└── package.json       # Workspace root dependencies and scripts
+│   ├── ui/                     # Shared Glassmorphism UI Component Library
+│   ├── config/                 # Shared Configs & Feature Flags
+│   ├── types/                  # Shared Domain Types & Interfaces
+│   ├── utils/                  # Shared Utility Functions & Helpers
+│   ├── contracts/              # Shared Zod Schemas & API DTOs (@hub/contracts)
+│   ├── database/               # Centralized Prisma ORM & Repositories (@hub/database)
+│   ├── auth/                   # Shared Authentication Guards (@hub/auth)
+│   ├── logger/                 # Shared Structured JSON Logger (@hub/logger)
+│   ├── telemetry/              # Shared Correlation ID Utilities (@hub/telemetry)
+│   └── constants/              # System-wide Enums & Constants (@hub/constants)
 ```
 
 ---
 
 ## 🛠️ Quick Start
 
-### Prerequisites
-- **Node.js**: `^20.0.0` or higher
-- **pnpm**: `^9.0.0` or higher
-- **Docker & Docker Compose** (for local PostgreSQL & Redis)
-
-### Installation
-
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/ai-study-hub.git
-cd ai-study-hub
+# 1. Install workspace dependencies
+npx pnpm install
 
-# Install workspace dependencies
-pnpm install
+# 2. Start local development servers
+npx pnpm dev
 
-# Copy environment template
-cp .env.example .env
-
-# Run development servers
-pnpm dev
+# 3. Execute workspace tests
+npx pnpm test
 ```
 
 ---
 
-## 📜 Repository Standards
+## 🔐 Environment Variables Configuration
 
-- **Main Branch**: `develop`
-- **Formatting**: Prettier
-- **Linting**: ESLint (`eslint-plugin-import`)
-- **Commit Messages**: Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`)
-- **Git Hooks**: Husky + `lint-staged`
+Copy `.env.example` to `.env` in the root directory:
+
+```ini
+NODE_ENV=development
+PORT=4000
+DATABASE_URL=postgresql://postgres:postgrespassword@localhost:5432/aistudyhub?schema=public
+JWT_SECRET=super-secret-jwt-key-change-in-production-min32chars
+REDIS_URL=redis://localhost:6379
+OPENAI_API_KEY=your_openai_api_key
+GEMINI_API_KEY=your_gemini_api_key
+OPENAI_MODEL=gpt-4o
+GEMINI_MODEL=gemini-1.5-pro
+```
 
 ---
 
-## 📄 License
+## 🐳 Docker Deployment Setup
+
+```bash
+# Build and boot full infrastructure stack (PostgreSQL, Redis, API, AI Service, WebSockets, Web, Admin)
+docker-compose up --build -d
+
+# Verify container health status
+docker-compose ps
+```
+
+---
+
+## 🧪 Verification & Testing Commands
+
+```bash
+# Monorepo typecheck across all 19 workspace packages
+npx --package=pnpm pnpm run typecheck
+
+# Execute Vitest test runner (8 test files, 21 unit & integration tests)
+npx --package=pnpm pnpm test
+```
+
+---
+
+## 🔧 Troubleshooting Guide
+
+- **PostgreSQL Connection Failures**: Ensure PostgreSQL container is running on port `5432` or run `prisma generate` inside `packages/database`.
+- **pnpm Execution Errors on Windows**: Run pnpm commands via `cmd.exe /c "npx --package=pnpm pnpm <command>"` to bypass script execution policy restrictions.
+- **AI Gateway Failover**: If `OPENAI_API_KEY` is omitted, the `LLMRouter` automatically degrades to `GeminiAdapter` or `StructuredFallbackAdapter` without crashing.
+
+---
+
+## 📜 License
 
 This project is licensed under the [MIT License](./LICENSE).
+

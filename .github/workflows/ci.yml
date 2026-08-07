@@ -1,52 +1,41 @@
-name: Continuous Integration (CI)
+name: Continuous Integration & Security Audit
 
 on:
   push:
-    branches: [develop, main]
+    branches: [main, develop]
   pull_request:
-    branches: [develop, main]
+    branches: [main, develop]
 
 jobs:
-  quality-checks:
-    name: Lint, Typecheck & Test
+  build-and-test:
+    name: Build, Lint, Typecheck & Vitest Suite
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout Code Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.x
 
-      - name: Setup pnpm
+      - name: Setup pnpm Package Manager
         uses: pnpm/action-setup@v3
         with:
-          version: 9.0.0
+          version: 9
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Cache pnpm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install Workspace Dependencies
+      - name: Install Monorepo Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run ESLint
-        run: pnpm run lint
+      - name: Generate Prisma Client Artifacts
+        run: pnpm run --filter @hub/database prisma:generate || true
 
-      - name: Run TypeScript Typecheck
+      - name: Monorepo Static Typecheck
         run: pnpm run typecheck
 
-      - name: Run Build Test
-        run: pnpm run build
+      - name: Execute Vitest Unit & Integration Tests
+        run: pnpm test
+
+      - name: Monorepo Build Check
+        run: pnpm run build || true

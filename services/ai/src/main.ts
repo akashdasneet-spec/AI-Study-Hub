@@ -1,41 +1,43 @@
-import { NestFactory } from '@nestjs/core';
-import { Module, Controller, Post, Body } from '@nestjs/common';
-import { OpenAIProvider } from './providers/openai.provider';
-import { GeminiProvider } from './providers/gemini.provider';
-import * as dotenv from 'dotenv';
+import express from 'express';
+import { LLMRouter } from './router/llm-router';
 
-dotenv.config();
+const app = express();
+app.use(express.json());
 
-@Controller('ai')
-class AIController {
-  constructor(
-    private readonly openAI: OpenAIProvider,
-    private readonly gemini: GeminiProvider,
-  ) {}
+const router = new LLMRouter();
 
-  @Post('summarize')
-  async summarize(@Body() body: { text: string }) {
-    try {
-      const res = await this.openAI.generateCompletion(body.text);
-      return { success: true, data: res };
-    } catch {
-      const res = await this.gemini.generateFallbackCompletion(body.text);
-      return { success: true, data: res };
-    }
+app.post('/api/v1/ai/summarize', async (req, res) => {
+  const { prompt, title } = req.body;
+  if (!prompt) {
+    return res.status(400).json({ success: false, error: 'Prompt is required' });
   }
-}
 
-@Module({
-  controllers: [AIController],
-  providers: [OpenAIProvider, GeminiProvider],
-})
-class AIModule {}
+  const result = await router.routeNoteSummary(prompt, title);
+  return res.json({ success: true, data: result.data, cached: result.cached });
+});
 
-async function bootstrap() {
-  const app = await NestFactory.create(AIModule);
-  app.setGlobalPrefix('/api/v1');
-  await app.listen(4002);
-  console.log(`🤖 AI Gateway Service running on http://localhost:4002/api/v1`);
-}
+app.post('/api/v1/ai/flashcards', async (req, res) => {
+  const { topic, cardCount } = req.body;
+  const count = parseInt(cardCount, 10) || 5;
 
-bootstrap();
+  const result = await router.routeFlashcards(topic || 'General Science', count);
+  return res.json({ success: true, data: result.data, cached: result.cached });
+});
+
+app.post('/api/v1/ai/quiz', async (req, res) => {
+  const { topic, questionCount } = req.body;
+  const count = parseInt(questionCount, 10) || 5;
+
+  const result = await router.routeQuiz(topic || 'Core Curriculum', count);
+  return res.json({ success: true, data: result.data, cached: result.cached });
+});
+
+app.get('/api/v1/ai/cache-stats', (req, res) => {
+  return res.json({ success: true, data: router.getCacheStats() });
+});
+
+const port = process.env.PORT || 4002;
+app.listen(port, () => {
+  console.log(`🤖 AI Gateway Service running on port ${port}`);
+});
+

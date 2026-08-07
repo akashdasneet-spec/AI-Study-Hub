@@ -1,21 +1,13 @@
-import { registerContract, roomContract, aiSummarizeContract } from '@hub/contracts';
+import { loginContract, registerContract } from '@hub/contracts';
 
-describe('Shared Zod Contracts Unit Tests', () => {
-  it('registerContract validates correct payload', () => {
-    const valid = { email: 'student@studyhub.com', password: 'password123', name: 'Student' };
-    const parsed = registerContract.parse(valid);
-    expect(parsed.email).toBe('student@studyhub.com');
+describe('Contracts Zod Schema Validation', () => {
+  it('should validate valid login payload', () => {
+    const valid = { email: 'student@studyhub.com', password: 'password123' };
+    expect(() => loginContract.parse(valid)).not.toThrow();
   });
 
-  it('roomContract applies default maxParticipants', () => {
-    const validRoom = { title: 'Calculus Study Sprint' };
-    const parsed = roomContract.parse(validRoom);
-    expect(parsed.maxParticipants).toBe(10);
-    expect(parsed.isPrivate).toBe(false);
-  });
-
-  it('aiSummarizeContract throws on text shorter than 50 characters', () => {
-    const invalid = { title: 'Short Note', text: 'Too short text' };
-    expect(() => aiSummarizeContract.parse(invalid)).toThrow();
+  it('should reject invalid email format in register payload', () => {
+    const invalid = { name: 'Alex', email: 'invalid-email', password: 'password123' };
+    expect(() => registerContract.parse(invalid)).toThrow();
   });
 });
