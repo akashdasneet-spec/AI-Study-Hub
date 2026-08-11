@@ -4,7 +4,7 @@ export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.string().default('4000'),
   DATABASE_URL: z.string().default('postgresql://postgres:postgres@localhost:5432/ai_study_hub?schema=public'),
-  JWT_SECRET: z.string().default('super-secret-jwt-key-change-in-production-min32chars'),
+  JWT_SECRET: z.string().min(16, 'JWT_SECRET must be at least 16 characters long').default('super-secret-jwt-key-change-in-production-min32chars'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   REDIS_URL: z.string().default('redis://localhost:6379'),
   OPENAI_API_KEY: z.string().optional(),
@@ -21,8 +21,15 @@ export function validateEnv(rawEnv: Record<string, any> = process.env): EnvConfi
     console.error('❌ Invalid environment variable configuration:', result.error.format());
     throw new Error('Invalid environment variable configuration');
   }
+
+  if (result.data.NODE_ENV === 'production' && result.data.JWT_SECRET.includes('change-in-production')) {
+    console.error('❌ Fatal Security Violation: Change default JWT_SECRET in production mode');
+    throw new Error('Fatal Security Violation: Default JWT_SECRET used in production mode');
+  }
+
   return result.data;
 }
+
 
 export const featureFlags = {
   enableDualModelFallback: true,

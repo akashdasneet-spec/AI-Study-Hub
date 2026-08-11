@@ -17,14 +17,16 @@ export default function AdminDashboardPage() {
   });
 
   useEffect(() => {
-    fetch('http://localhost:4000/api/v1/telemetry/health')
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+
+    fetch(`${apiUrl}/telemetry/health`)
       .then((res) => res.json())
       .then((json) => {
         if (json.success && json.services) setHealth(json);
       })
       .catch(() => {});
 
-    fetch('http://localhost:4000/api/v1/telemetry/metrics')
+    fetch(`${apiUrl}/telemetry/metrics`)
       .then((res) => res.json())
       .then((json) => {
         if (json.success && json.data) setMetrics(json.data);

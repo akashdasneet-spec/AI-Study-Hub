@@ -77,7 +77,7 @@ export default function UserProfilePage() {
           <div className="flex flex-wrap items-center gap-6">
             <div className="h-20 w-20 rounded-3xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center font-black text-3xl text-white shadow-xl shadow-indigo-500/30 border border-white/20 overflow-hidden">
               {avatarUrl ? (
-                <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                <img src={avatarUrl} alt="Avatar" loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 user?.name ? user.name.slice(0, 2).toUpperCase() : 'US'
               )}
@@ -91,7 +91,7 @@ export default function UserProfilePage() {
                 </span>
               </div>
               <p className="text-slate-400 text-sm">{user?.email}</p>
-              <p className="text-slate-300 text-xs italic">"{bio || 'No bio set yet.'}"</p>
+              <p className="text-slate-300 text-xs italic">&quot;{bio || 'No bio set yet.'}&quot;</p>
             </div>
           </div>
         </GlassCard>

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { GlassCard, GradientButton } from '@hub/ui';
 import { registerContract } from '@hub/contracts';
 import { Sparkles, Mail, Lock, User, UserPlus } from 'lucide-react';
+import { apiClient } from '../../lib/api-client';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -20,19 +21,14 @@ export default function RegisterPage() {
     try {
       registerContract.parse({ name, email, password });
 
-      const res = await fetch('http://localhost:4000/api/v1/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
+      const res = await apiClient.post('/auth/register', { name, email, password });
 
-      const json = await res.json();
-      if (!json.success) {
-        throw new Error(json.error?.message || 'Registration failed');
+      if (!res.success || !res.data) {
+        throw new Error(typeof res.error === 'string' ? res.error : res.error?.message || 'Registration failed');
       }
 
-      localStorage.setItem('accessToken', json.data.tokens.accessToken);
-      localStorage.setItem('user', JSON.stringify(json.data.user));
+      localStorage.setItem('accessToken', res.data.tokens.accessToken);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
 
       window.location.href = '/dashboard';
     } catch (err: any) {

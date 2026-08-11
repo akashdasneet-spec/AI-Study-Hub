@@ -11,7 +11,11 @@ export function getPrismaClient(): PrismaClient {
 
 export * from './repositories/user.repository';
 export * from './repositories/room.repository';
+export * from './repositories/focus-session.repository';
+export * from './repositories/note.repository';
 export * from './redis.client';
+
+
 
 
 

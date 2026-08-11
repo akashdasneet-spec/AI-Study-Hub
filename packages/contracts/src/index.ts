@@ -62,3 +62,10 @@ export const structuredQuizSchema = z.object({
     })
   ),
 });
+
+export const createFocusSessionSchema = z.object({
+  durationMinutes: z.number().min(1).max(180),
+  subject: z.string().min(2, 'Subject must be at least 2 characters'),
+  notes: z.string().optional(),
+});
+

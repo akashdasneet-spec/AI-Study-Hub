@@ -69,7 +69,7 @@ export default function DashboardPage() {
               <Clock className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-slate-400 text-xs font-semibold uppercase">Today's Time</span>
+              <span className="text-slate-400 text-xs font-semibold uppercase">Today&apos;s Time</span>
               <div className="text-2xl font-black text-white">1h 45m</div>
             </div>
           </GlassCard>

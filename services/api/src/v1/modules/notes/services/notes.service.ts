@@ -1,10 +1,12 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { NoteRepository } from '@hub/database';
 import { ImportYoutubeDto } from '../dto/import-youtube.dto';
 import { YoutubeTranscriptService } from './youtube-transcript.service';
 
 @Injectable()
 export class NotesService {
   private readonly logger = new Logger(NotesService.name);
+  private readonly noteRepo = new NoteRepository();
 
   constructor(private readonly transcriptService: YoutubeTranscriptService) {}
 
@@ -17,20 +19,35 @@ export class NotesService {
     const realTranscript = await this.transcriptService.fetchTranscript(videoId);
     const summaryTitle = dto.title || `YouTube Lecture Notes (${videoId})`;
 
-    return {
-      noteId: `note-yt-${Date.now()}`,
+    const summaryText = `## ${summaryTitle}\n\nSynthesized from Real Caption Transcript:\n${realTranscript.slice(0, 300)}...`;
+    const keyPoints = [
+      'Core concepts derived directly from video caption track.',
+      'Active recall principles applied to lecture topics.',
+      'Spaced repetition recommendations generated for study rooms.',
+    ];
+    const modelUsed = process.env.OPENAI_MODEL || 'gpt-4o';
+
+    const savedNote = await this.noteRepo.createNote({
+      userId: userId || 'demo-user-id',
       videoId,
       title: summaryTitle,
-      summaryText: `## ${summaryTitle}\n\nSynthesized from Real Caption Transcript:\n${realTranscript.slice(0, 300)}...`,
-      keyPoints: [
-        'Core concepts derived directly from video caption track.',
-        'Active recall principles applied to lecture topics.',
-        'Spaced repetition recommendations generated for study rooms.',
-      ],
-      modelUsed: process.env.OPENAI_MODEL || 'gpt-4o',
+      summaryText,
+      keyPoints,
       sourceUrl: dto.youtubeUrl,
-      createdAt: new Date().toISOString(),
-    };
+      modelUsed,
+    });
+
+    return savedNote;
+  }
+
+  async getUserNotes(userId: string) {
+    return this.noteRepo.getUserNotes(userId || 'demo-user-id');
+  }
+
+  async getNoteById(id: string) {
+    const note = await this.noteRepo.getNoteById(id);
+    if (!note) throw new NotFoundException(`Note with ID ${id} not found`);
+    return note;
   }
 
   private extractYoutubeId(url: string): string | null {
@@ -38,3 +55,4 @@ export class NotesService {
     return match ? match[1] : null;
   }
 }
+

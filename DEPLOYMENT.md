@@ -1,95 +1,123 @@
-# Production Deployment & Infrastructure Manual — `DEPLOYMENT.md`
+# 🏭 Production Deployment & Operations Manual — `DEPLOYMENT.md`
 
 ## 1. Executive Summary & Production Topology
 
-The **AI-Powered Group Study Hub** is deployed in production using a **Modular Monolith** architecture:
-- **Frontend Portal (`apps/web`)**: Deployed on **Vercel** (`https://studyhub-ai.vercel.app`).
-- **Admin Dashboard (`apps/admin`)**: Deployed on **Vercel** (`https://admin-studyhub.vercel.app`).
-- **REST API & WebSockets Gateway (`services/api`, `services/websocket`)**: Deployed on **Railway** (`https://api.studyhub.up.railway.app/api/v1`).
-- **AI Engine Gateway (`services/ai`)**: Deployed on **Railway** (`https://ai.studyhub.up.railway.app/api/v1`).
-- **PostgreSQL Database**: Provisioned PostgreSQL 16 instance with SSL connection pooling.
-- **Redis In-Memory Store**: Provisioned Redis 7 instance with dual RDB/AOF persistence for SHA-256 prompt caching.
+The **AI-Powered Group Study Hub** monorepo is structured for production deployment using a hybrid architecture:
+- **Frontend Portals (`apps/web`, `apps/admin`)**: Deployed to **Vercel** (`https://app.example.com` & `https://admin.example.com`).
+- **REST API Gateway (`services/api`)**: Deployed to persistent Node/Container hosting (Railway / Render / AWS ECS / Render).
+- **AI Gateway Service (`services/ai`)**: Deployed to persistent Node/Container hosting with OpenAI & Gemini provider adapters.
+- **WebSocket Service (`services/websocket`)**: Deployed to persistent Node/Container hosting maintaining stateful Socket.IO connections.
+- **Infrastructure Events Service (`services/events`)**: Deployed to persistent Node/Container hosting handling background job event streams.
+- **PostgreSQL Database**: PostgreSQL 16 instance with SSL connection pooling and automated WAL backups.
+- **Redis In-Memory Store**: Redis 7 instance supporting SHA-256 prompt caching and state failover.
 
 ---
 
-## 2. Production Environment Variable Specification
+## 2. Platform Compatibility & Hosting Recommendations
 
-### 2.1 Backend Microservices Environment Config (`.env.production`)
+| Service / App | Recommended Platform | Reason / Architecture Constraint |
+| :--- | :--- | :--- |
+| `apps/web` | **Vercel** | Next.js 14 App Router, static page prerendering, serverless functions. |
+| `apps/admin` | **Vercel** | Next.js 14 Admin Portal, static route optimization. |
+| `services/api` | **Node/Container (Railway / AWS / Render)** | Persistent NestJS REST API Gateway server instance. |
+| `services/ai` | **Node/Container (Railway / AWS / Render)** | Persistent Express AI Provider Gateway. |
+| `services/websocket` | **Node/Container (Railway / AWS / Render)** | **Requires persistent Node runtime**; Socket.IO WebSockets are not compatible with Vercel serverless function limits. |
+| `services/events` | **Node/Container (Railway / AWS / Render)** | Event listener background worker process. |
+
+---
+
+## 3. Production Environment Variable Specification
+
+### 3.1 Server-Only Environment Variables (Keep Private & Never Expose)
 ```ini
 NODE_ENV=production
 PORT=4000
 API_PREFIX=/api/v1
 
 # PostgreSQL Database
-DATABASE_URL="postgresql://postgres:SecureProdPassword@postgres.railway.internal:5432/aistudyhub?sslmode=require"
+DATABASE_URL="postgresql://postgres:SecureProdPassword@postgres.example.com:5432/ai_study_hub?sslmode=require"
 
-# Redis Cache & Message Broker
-REDIS_HOST="redis.railway.internal"
-REDIS_PORT=6379
-REDIS_PASSWORD="SecureRedisPassword"
+# Redis Cache & Broker
+REDIS_URL="redis://:SecureRedisPassword@redis.example.com:6379"
 
-# Authentication & Security Secrets
-JWT_SECRET="prod_jwt_secret_83hfa92ndk923j109"
+# Security & Authentication
+JWT_SECRET="prod_jwt_secret_min_32_characters_long_security_key"
 JWT_EXPIRES_IN="15m"
-CORS_ALLOWED_ORIGINS="https://studyhub-ai.vercel.app,https://admin-studyhub.vercel.app"
+CORS_ALLOWED_ORIGINS="https://app.example.com,https://admin.example.com"
 
-# Dynamic AI Models Gateway
+# AI Provider Credentials
 OPENAI_API_KEY="sk-prod-openai-key-here"
 OPENAI_MODEL="gpt-4o"
-
 GEMINI_API_KEY="AIzaSyProdGeminiKeyHere"
 GEMINI_MODEL="gemini-1.5-pro"
-
-# Telemetry & Monitoring
-PROMETHEUS_METRICS_PORT=9090
 ```
 
-### 2.2 Frontend Next.js Portal Environment Config (`apps/web/.env.production`)
+### 3.2 Client-Side Public Environment Variables (Exposed via Next.js)
 ```ini
-NEXT_PUBLIC_APP_URL="https://studyhub-ai.vercel.app"
-NEXT_PUBLIC_API_URL="https://api.studyhub.up.railway.app/api/v1"
-NEXT_PUBLIC_WS_URL="wss://api.studyhub.up.railway.app/realtime/rooms"
+# apps/web & apps/admin
+NEXT_PUBLIC_APP_URL="https://app.example.com"
+NEXT_PUBLIC_ADMIN_URL="https://admin.example.com"
+NEXT_PUBLIC_API_URL="https://api.example.com/api/v1"
+NEXT_PUBLIC_WS_URL="wss://ws.example.com/realtime/rooms"
 ```
 
 ---
 
-## 3. Production Deployment Commands & Step-by-Step Procedure
+## 4. Step-by-Step Production Deployment Procedure
 
-### 3.1 Database Migration & Seeding
+### 4.1 Database Provisioning & Prisma Migrations
 ```bash
-# Push database migrations to production PostgreSQL instance
-pnpm --filter @hub/database prisma db push
+# Apply pending Prisma migrations to production database without data destruction
+npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma
 
-# Seed production system roles and admin accounts
-pnpm --filter @hub/database prisma db seed
+# Generate production Prisma Client bindings
+npx prisma generate --schema=packages/database/prisma/schema.prisma
 ```
 
-### 3.2 Backend Railway Container Deployment
+### 4.2 API, AI & WebSocket Container Service Deployment
 ```bash
-# Deploy multi-service Docker container via Railway CLI
-railway up --service api-gateway
+# Build and run containers via Docker Compose
+docker-compose -f docker-compose.yml up -d --build
 ```
 
-### 3.3 Frontend Vercel Production Build
+### 4.3 Frontend Next.js Portal Deployment (Vercel)
 ```bash
-# Deploy Next.js 14 Student Portal
+# Deploy Student Portal
 vercel --cwd apps/web --prod
+
+# Deploy Admin Portal
+vercel --cwd apps/admin --prod
 ```
 
 ---
 
-## 4. Post-Deployment Smoke Test Protocol
+## 5. Rollback Procedure
 
-1. **API Health Check**:
+In the event of a production deployment issue:
+1. **Container Microservices**: Revert container images using tag-based deployment:
    ```bash
-   curl -I https://api.studyhub.up.railway.app/api/v1/rooms
-   # HTTP/2 200 OK
+   docker-compose down
+   docker pull studyhub/api:v1.0.0-previous
+   docker-compose up -d
    ```
-2. **WebSockets Handshake Verification**:
-   Verify `wss://api.studyhub.up.railway.app/realtime/rooms` emits `room:join` and `chat:broadcast` events cleanly.
-3. **Real YouTube Caption Pipeline Verification**:
-   POST YouTube URL `https://www.youtube.com/watch?v=dQw4w9WgXcQ` to `/api/v1/notes/import-youtube` and verify real caption text is extracted prior to AI note synthesis.
-4. **Dual-Model AI Failover**:
-   Verify primary OpenAI call succeeds; test Gemini fallback by setting invalid `OPENAI_API_KEY`.
-5. **Redis Prompt Cache Verification**:
-   Verify identical AI prompt query returns `cached: true` on second call within 24h.
+2. **Frontend Applications**: Revert to the previous instant deployment alias in Vercel Dashboard or via CLI:
+   ```bash
+   vercel rollback --cwd apps/web
+   ```
+
+---
+
+## 6. Health Checks & Post-Deployment Smoke Tests
+
+1. **API Health Endpoint**:
+   ```bash
+   curl -i https://api.example.com/api/v1/telemetry/health
+   # Expected: HTTP/2 200 OK with {"success": true, "status": "HEALTHY"}
+   ```
+2. **WebSocket Handshake Verification**:
+   Verify `wss://ws.example.com/realtime/rooms` accepts socket connections cleanly.
+3. **YouTube Import & Persistent Notes Pipeline**:
+   - POST YouTube URL `https://www.youtube.com/watch?v=dQw4w9WgXcQ` to `/api/v1/notes/import-youtube`.
+   - Refresh page and verify note is retrieved from database via `GET /api/v1/notes`.
+4. **AI Gateway Dual-Model Failover**:
+   Verify primary OpenAI responses succeed; verify Gemini fallback when OpenAI API key is toggled.

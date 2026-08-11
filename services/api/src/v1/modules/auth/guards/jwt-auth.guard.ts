@@ -5,7 +5,7 @@ import { verifyAccessToken } from '@hub/auth';
 export class JwtAuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers['authorization'];
+    const authHeader = request.headers?.authorization || request.headers?.['authorization'];
 
     if (!authHeader) {
       throw new UnauthorizedException('Authorization header is required');
