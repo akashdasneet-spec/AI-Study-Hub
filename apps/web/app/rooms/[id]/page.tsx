@@ -16,11 +16,15 @@ export default function StudyRoomPage({ params }: { params: { id: string } }) {
   const [userName, setUserName] = useState('Student');
 
   useEffect(() => {
+    let effectiveUserName = 'Student';
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
         const u = JSON.parse(storedUser);
-        if (u.name) setUserName(u.name);
+        if (u.name) {
+          effectiveUserName = u.name;
+          setUserName(u.name);
+        }
       } catch {}
     }
 
@@ -28,7 +32,7 @@ export default function StudyRoomPage({ params }: { params: { id: string } }) {
     const s = io(wsUrl, { transports: ['websocket', 'polling'] });
 
     s.on('connect', () => {
-      s.emit('room:join', { roomId: params.id, userName });
+      s.emit('room:join', { roomId: params.id, userName: effectiveUserName });
     });
 
     s.on('chat:broadcast', (msg: any) => {
