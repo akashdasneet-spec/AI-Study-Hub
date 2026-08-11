@@ -18,7 +18,9 @@
     "@hub/types": "workspace:*",
     "@hub/utils": "workspace:*",
     "@hub/ui": "workspace:*",
-    "@hub/contracts": "workspace:*"
+    "@hub/contracts": "workspace:*",
+    "@hub/database": "workspace:*",
+    "@hub/auth": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
